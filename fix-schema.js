@@ -1,0 +1,13 @@
+const fs = require('fs');
+let s = fs.readFileSync('prisma/schema.prisma', 'utf8');
+s = s.replace(/enum\s+\w+\s+\{[\s\S]*?\}/g, '');
+s = s.replace(/Role\s+@default\(BUYER\)/g, 'String @default("BUYER")');
+s = s.replace(/DomainStatus\s+@default\(AVAILABLE\)/g, 'String @default("AVAILABLE")');
+s = s.replace(/VerificationMethod/g, 'String');
+s = s.replace(/VerificationStatus\s+@default\(PENDING\)/g, 'String @default("PENDING")');
+s = s.replace(/OfferStatus\s+@default\(PENDING\)/g, 'String @default("PENDING")');
+s = s.replace(/TransactionStatus\s+@default\(PENDING\)/g, 'String @default("PENDING")');
+s = s.replace(/WithdrawalStatus\s+@default\(PENDING\)/g, 'String @default("PENDING")');
+s = s.replace(/AuctionStatus\s+@default\(ACTIVE\)/g, 'String @default("ACTIVE")');
+s = s.replace(/LeadStatus\s+@default\(NEW\)/g, 'String @default("NEW")');
+fs.writeFileSync('prisma/schema.prisma', s);

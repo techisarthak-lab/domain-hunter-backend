@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+model User {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String
+  fullName           String
+  role               String @default("BUYER")
+  isVerified         Boolean  @default(false)
+  verificationToken  String?
+  resetPasswordToken String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  domains       Domain[]
+  savedDomains  SavedDomain[]
+  offersMade    Offer[]       @relation("BuyerOffers")
+  transactions  Transaction[] @relation("BuyerTransactions")
+  wallet        Wallet?
+  leads         Lead[]        @relation("SellerLeads")
+  bids          Bid[]         @relation("BuyerBids")
+  rating        Float         @default(0)
+  totalRatings  Int           @default(0)
+  messages      OfferMessage[] @relation("UserMessages")
+}
+
+model Domain {
+  id               String       @id @default(uuid())
+  name             String       @unique
+  description      String?
+  category         String
+  buyNowPrice      Float?
+  minimumOffer     Float?
+  isFeatured       Boolean      @default(false)
+  isPremium        Boolean      @default(false)
+  status           String @default("AVAILABLE")
+  isOwnershipVerified Boolean   @default(false)
+  isRentToOwn      Boolean   @default(false)
+  rentToOwnMonths  Int?
+  theme            String    @default("modern")
+  
+  sellerId         String
+  seller           User         @relation(fields: [sellerId], references: [id])
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  savedByUsers     SavedDomain[]
+  verifications    DomainVerification[]
+  offers           Offer[]
+  transactions     Transaction[]
+  leads            Lead[]       @relation("DomainLeads")
+  auction          Auction?
+}
+
+
+
+model Auction {
+  id           String        @id @default(uuid())
+  domainId     String        @unique
+  reservePrice Float
+  startingBid  Float
+  currentBid   Float         @default(0)
+  endTime      DateTime
+  status       String @default("ACTIVE")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  domain       Domain        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  bids         Bid[]
+}
+
+model Bid {
+  id         String   @id @default(uuid())
+  auctionId  String
+  buyerId    String
+  amount     Float
+  createdAt  DateTime @default(now())
+
+  auction    Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  buyer      User     @relation("BuyerBids", fields: [buyerId], references: [id])
+}
+
+model DomainVerification {
+  id        String             @id @default(uuid())
+  domainId  String
+  method    String
+  token     String
+  status    String @default("PENDING")
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  domain    Domain             @relation(fields: [domainId], references: [id], onDelete: Cascade)
+}
+
+model SavedDomain {
+  id        String   @id @default(uuid())
+  userId    String
+  domainId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, domainId])
+}
+
+model Offer {
+  id           String      @id @default(uuid())
+  domainId     String
+  buyerId      String
+  amount       Float
+  status       String @default("PENDING")
+  message      String?
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  domain       Domain      @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  buyer        User        @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
+  messages     OfferMessage[]
+}
+
+model Transaction {
+  id           String            @id @default(uuid())
+  domainId     String
+  buyerId      String
+  amount       Float
+  commission   Float             @default(0)
+  status       String @default("PENDING")
+  paymentId    String?
+  checkoutUrl  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  domain       Domain            @relation(fields: [domainId], references: [id])
+  buyer        User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
+}
+
+model Wallet {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  balance      Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+  withdrawals  WithdrawalRequest[]
+}
+
+model WalletTransaction {
+  id           String   @id @default(uuid())
+  walletId     String
+  amount       Float
+  type         String   // "CREDIT" or "DEBIT"
+  description  String?
+  createdAt    DateTime @default(now())
+
+  wallet       Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+model WithdrawalRequest {
+  id           String           @id @default(uuid())
+  walletId     String
+  amount       Float
+  status       String @default("PENDING")
+  bankDetails  String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  wallet       Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+
+
+model Lead {
+  id        String     @id @default(uuid())
+  sellerId  String
+  domainId  String?
+  name      String
+  email     String
+  phone     String?
+  message   String?
+  status    String @default("NEW")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  seller    User       @relation("SellerLeads", fields: [sellerId], references: [id])
+  domain    Domain?    @relation("DomainLeads", fields: [domainId], references: [id])
+  notes     Note[]
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  leadId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+
+model OfferMessage {
+  id        String   @id @default(uuid())
+  offerId   String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  sender    User     @relation("UserMessages", fields: [senderId], references: [id])
+}
