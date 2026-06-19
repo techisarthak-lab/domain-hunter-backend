@@ -31,7 +31,7 @@ Ensure the output is ONLY the JSON object and no markdown formatting.`;
         return { error: "GEMINI_API_KEY is missing in backend environment." };
       }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
       
       const apiRes = await fetch(url, {
         method: 'POST',
