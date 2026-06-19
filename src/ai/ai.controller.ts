@@ -3,11 +3,11 @@ import { AiService } from './ai.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('ai')
-@UseGuards(JwtAuthGuard)
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Get('description')
+  @UseGuards(JwtAuthGuard)
   generateDescription(@Query('domainName') domainName: string, @Query('category') category: string) {
     return this.aiService.generateDescription(domainName, category);
   }
@@ -18,6 +18,7 @@ export class AiController {
   }
 
   @Get('suggest')
+  @UseGuards(JwtAuthGuard)
   suggestDomains(@Query('keyword') keyword: string) {
     return this.aiService.suggestDomains(keyword);
   }
